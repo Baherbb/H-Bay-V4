@@ -46,7 +46,7 @@ const ContactUs: React.FC = () => {
   const [currentTime, setCurrentTime] = useState('');
 
   useEffect(() => {
-    // Update office hours based on local time
+    
     const updateCurrentTime = () => {
       const time = new Date().toLocaleTimeString('en-US', {
         hour: '2-digit',
@@ -115,7 +115,6 @@ const ContactUs: React.FC = () => {
     setIsSubmitting(true);
     
     try {
-      // Simulate form submission
       await new Promise(resolve => setTimeout(resolve, 1500));
       setIsSuccess(true);
       setFormData({ name: '', email: '', subject: '', message: '' });
@@ -129,8 +128,8 @@ const ContactUs: React.FC = () => {
   };
 
   const contactInfo = [
-    { icon: Phone, label: 'Phone', value: '+1 234 567 890' },
-    { icon: Mail, label: 'Email', value: 'info@hbay.com' },
+    { icon: Phone, label: 'Phone', value: '+20 1001691976' },
+    { icon: Mail, label: 'Email', value: 'hbay@gmail.com' },
     { icon: MapPin, label: 'Address', value: 'Zewail City, Giza, Egypt' },
     { icon: Clock, label: 'Working Hours', value: '9:00 AM - 6:00 PM (EET)' }
   ];

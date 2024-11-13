@@ -93,9 +93,9 @@ const Footer = () => {
             </p>
             <div className="mt-8 space-y-4">
               {[
-                { icon: Phone, label: "24/7 Tech Support", value: "+1 (234) 567-8900" },
+                { icon: Phone, label: "24/7 Tech Support", value: "+20 1001691976" },
                 { icon: Mail, label: "Email Support", value: "support@hbay.tech" },
-                { icon: MapPin, label: "Main Store", value: "Tech Valley, SF 94105" },
+                { icon: MapPin, label: "Main Store", value: "Zewail City of Science and Technology, F005" },
               ].map((item) => (
                 <div key={item.label} className="flex items-center space-x-3 group">
                   <div className="bg-orange-900/50 p-2.5 rounded-lg group-hover:bg-orange-800/50 transition-colors duration-200">

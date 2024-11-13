@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ShoppingCart, Star, ArrowRight, Tag, Truck, Shield, Clock } from 'lucide-react';
 import Hero from '../components/Hero'
-// Define types
+
 interface Category {
   id: number;
   name: string;
@@ -18,12 +18,12 @@ interface Product {
   discount: number;
 }
 
-// Placeholder data
+
 const categories: Category[] = [
   { id: 1, name: 'Watches', image: '/images/watch.png', count: 24 },
   { id: 2, name: 'Electronics', image: '/images/electronics.png', count: 156 },
-  { id: 3, name: 'Accessories', image: '/images/accessories.png', count: 90 },
-  { id: 4, name: 'Gadgets', image: '/images/gadgets.png', count: 72 }
+  { id: 3, name: 'Accessories', image: '/images/accessories.jpg', count: 90 },
+  { id: 4, name: 'Gadgets', image: '/images/image-Photoroom.jpg', count: 72 }
 ];
 
 const featuredProducts: Product[] = [

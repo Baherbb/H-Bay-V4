@@ -4,9 +4,12 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import compression from 'compression';
 import rateLimit from 'express-rate-limit';
+import session from 'express-session';
+import passport from './config/passport';
 import sequelize from './config/database';
 import { errorHandler, notFound } from './middleware/error.middleware';
-
+import routes from './routes/category.routes';
+import authRoutes from './routes/auth.routes';
 
 
 class Server {
@@ -27,22 +30,42 @@ class Server {
         this.app.use(express.json());
         this.app.use(express.urlencoded({ extended: true }));
         this.app.use(compression());
+
         
+        this.app.use(session({
+            secret: process.env.SESSION_SECRET!,
+            resave: false,
+            saveUninitialized: false,
+            cookie: {
+                secure: process.env.NODE_ENV === 'production',
+                httpOnly: true,
+                maxAge: 24 * 60 * 60 * 1000 
+            }
+        }));
+
+        this.app.use(passport.initialize());
+        this.app.use(passport.session());
+
         if (process.env.NODE_ENV === 'development') {
             this.app.use(morgan('dev'));
         }
 
         const limiter = rateLimit({
             windowMs: 15 * 60 * 1000,
-            max: 100 
+            max: 100
         });
         this.app.use(limiter);
     }
+
 
     private initializeRoutes(): void {
         this.app.get('/health', (req: Request, res: Response) => {
             res.status(200).json({ status: 'ok', timestamp: new Date() });
         });
+
+        
+        this.app.use('/api/categories', routes);
+        this.app.use('/api/auth', authRoutes);
     }
 
     private initializeErrorHandling(): void {
