@@ -24,7 +24,6 @@ const useCountAnimation = (end: number, duration: number = 2000, isVisible: bool
       const progress = timestamp - startTimeRef.current;
       const percentage = Math.min(progress / duration, 1);
 
-      // Easing function for smooth animation
       const easeOutQuart = 1 - Math.pow(1 - percentage, 4);
       const nextCount = Math.round(end * easeOutQuart);
 

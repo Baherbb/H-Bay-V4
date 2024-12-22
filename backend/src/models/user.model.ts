@@ -2,7 +2,6 @@ import { Model, DataTypes } from 'sequelize';
 import bcrypt from 'bcryptjs';
 import sequelize from '../config/database';
 
-// Define the enum type to match PostgreSQL
 export type UserType = 'customer' | 'employee' | 'admin' | 'super_admin';
 
 export interface UserAttributes {
@@ -13,7 +12,10 @@ export interface UserAttributes {
   password?: string;
   user_type: UserType;
   google_id?: string;
+  facebook_id?: string;
   profile_picture?: string;
+  reset_password_token?: string | null;
+  reset_password_expires?: Date | null;
   created_at?: Date;
   updated_at?: Date;
 }
@@ -28,6 +30,9 @@ class User extends Model<UserAttributes, UserCreationAttributes> implements User
   public password!: string;
   public user_type!: UserType;
   public google_id!: string;
+  public facebook_id!: string;
+  public reset_password_token!: string | null;  
+  public reset_password_expires!: Date | null;
   public profile_picture!: string;
   public created_at!: Date;
   public updated_at!: Date;
@@ -49,7 +54,7 @@ User.init(
       allowNull: false,
     },
     email: {
-      type: DataTypes.STRING(255),
+      type: DataTypes.STRING(500),
       allowNull: false,
       unique: true,
       validate: {
@@ -73,6 +78,19 @@ User.init(
       allowNull: true,
       unique: true,
     },
+    facebook_id: { /*Modified For Facebook*/
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      unique: true,
+    },
+    reset_password_token: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    reset_password_expires: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
     profile_picture: {
       type: DataTypes.STRING(255),
       allowNull: true,
@@ -91,8 +109,8 @@ User.init(
     tableName: 'users',
     timestamps: true,
     underscored: true,
-    freezeTableName: true, // Add this to prevent any table name modifications
-    schema: 'public', // Explicitly set the schema
+    freezeTableName: true, // Preventing any table name modifications
+    schema: 'public', 
     hooks: {
       beforeCreate: async (user: User) => {
         if (user.password) {

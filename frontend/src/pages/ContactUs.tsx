@@ -315,7 +315,7 @@ const ContactUs: React.FC = () => {
                         onBlur={() => handleBlur('name')}
                         className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all
                           ${errors.name && touched.name ? 'border-red-500' : 'border-gray-300'}`}
-                        placeholder="John Doe"
+                        placeholder="Mohamed Maher"
                         required
                       />
                       {errors.name && touched.name && (
@@ -336,7 +336,7 @@ const ContactUs: React.FC = () => {
                         onBlur={() => handleBlur('email')}
                         className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all
                           ${errors.email && touched.email ? 'border-red-500' : 'border-gray-300'}`}
-                        placeholder="john@example.com"
+                        placeholder="mohamed@example.com"
                         required
                       />
                       {errors.email && touched.email && (<p className="mt-1 text-sm text-red-600">{errors.email}</p>

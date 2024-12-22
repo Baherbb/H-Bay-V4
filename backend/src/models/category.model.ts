@@ -5,6 +5,7 @@ import sequelize from '../config/database';
 interface CategoryAttributes {
     id: number;
     name: string;
+    image_url: string;
     description: string | null;
     parent_category_id: number | null;
 }
@@ -14,6 +15,7 @@ interface CategoryCreationAttributes extends Optional<CategoryAttributes, 'id'>{
 class Category extends Model<CategoryAttributes, CategoryCreationAttributes> implements CategoryAttributes {
     public id!: number;
     public name!: string;
+    public image_url!: string;
     public description!: string | null;
     public parent_category_id!: number | null;
 
@@ -42,6 +44,19 @@ Category.init(
                 len:[2,100],
             },
         },
+        image_url: {
+            type: DataTypes.TEXT,
+            allowNull: true,
+            validate: {
+                customUrlValidator(value: string) {
+                    // Allow both regular URLs and data URLs (base64)
+                    const urlPattern = /^(https?:\/\/.*|data:image\/.*)/i;
+                    if (!urlPattern.test(value)) {
+                        throw new Error('Invalid image URL format. Must be a valid HTTP/HTTPS URL or data URL');
+                    }
+                }
+            },
+        },
         description:{
             type:DataTypes.TEXT,
             allowNull:true,
@@ -63,15 +78,5 @@ Category.init(
         updatedAt: 'updated_at',
     }
 );
-//Many to One Relationship
-Category.belongsTo(Category, {
-    as: 'parent',
-    foreignKey: 'parent_category_id',
-});
-//One to Many Relationship
-Category.hasMany(Category, {
-    as: 'children',
-    foreignKey: 'parent_category_id',
-});
 
 export default Category;

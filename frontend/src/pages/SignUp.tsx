@@ -1,6 +1,9 @@
 import React, { useState, ChangeEvent, FormEvent } from 'react';
-import { Link } from 'react-router-dom';
-import { Eye, EyeOff, Check, AlertCircle } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Eye, EyeOff, Check, AlertCircle, Loader } from 'lucide-react';
+import { Alert, AlertDescription } from '../components/ui/alert';
+import { useAuth } from '../contexts/AuthContext';
+import { ApiResponse } from '../types/auth';
 
 interface FormData {
   username: string;
@@ -10,7 +13,23 @@ interface FormData {
   confirmPassword: string;
 }
 
+// interface ApiResponse {
+//   status: string;
+//   data?: {
+//     token: string;
+//     user: {
+//       id: number;
+//       name: string;
+//       email: string;
+//     };
+//   };
+//   message?: string;
+// }
+
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000';
+
 const SignUp: React.FC = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState<FormData>({
     username: '',
     email: '',
@@ -22,13 +41,15 @@ const SignUp: React.FC = () => {
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false);
   const [passwordStrength, setPasswordStrength] = useState<number>(0);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string>('');
 
   const handleInputChange = (e: ChangeEvent<HTMLInputElement>): void => {
+    setError(''); // Clear any previous errors
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
     
     if (name === 'password') {
-      // Calculate password strength
       let strength = 0;
       if (value.length >= 8) strength++;
       if (/[A-Z]/.test(value)) strength++;
@@ -37,14 +58,58 @@ const SignUp: React.FC = () => {
       setPasswordStrength(strength);
     }
   };
-
-  const handleSubmit = (e: FormEvent<HTMLFormElement>): void => {
+  const { login } = useAuth();
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
+    
     if (formData.password !== formData.confirmPassword) {
-      alert("Passwords don't match!");
+      setError("Passwords don't match!");
       return;
     }
-    console.log('Form Data:', formData);
+
+    if (passwordStrength < 3) {
+      setError('Password is not strong enough');
+      return;
+    }
+
+    setIsLoading(true);
+    setError('');
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include', // Add this line to handle cookies
+        body: JSON.stringify({
+          name: formData.username,
+          email: formData.email,
+          phone: formData.phone,
+          password: formData.password,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Registration failed');
+      }
+
+      const data: ApiResponse = await response.json();
+
+      // Store the token in localStorage
+      if (data.data?.token && data.data?.user) {
+        login(data.data.token, data.data.user, data.data.permissions || []);
+        navigate('/');
+      }
+      // Redirect to home page or dashboard
+      navigate('/');
+      
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred during registration');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const getStrengthColor = (): string => {
@@ -57,7 +122,9 @@ const SignUp: React.FC = () => {
       default: return 'bg-gray-200';
     }
   };
-
+  const handleSocialLogin = (provider: 'google' | 'facebook') => {
+    window.location.href = `${API_BASE_URL}/api/auth/${provider}`;
+  };
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-500  to-orange-700 p-4">
       <div className="bg-white p-8 rounded-2xl shadow-2xl max-w-md w-full mx-auto space-y-8">
@@ -68,7 +135,12 @@ const SignUp: React.FC = () => {
           </h1>
           <p className="text-gray-600 text-sm">Join our community today</p>
         </div>
-
+        {/* Error Alert */}
+        {error && (
+          <Alert variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
         {/* Form Section */}
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Name Input */}
@@ -193,9 +265,17 @@ const SignUp: React.FC = () => {
           {/* Submit Button */}
           <button
             type="submit"
+            disabled={isLoading}
             className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold py-3 px-4 rounded-lg hover:from-orange-600 hover:to-orange-700 transition-all duration-300 shadow-lg hover:shadow-xl"
           >
-            Create Account
+          {isLoading ? (
+              <>
+                <Loader className="animate-spin mr-2" size={20} />
+                Creating Account...
+              </>
+            ) : (
+              'Create Account'
+            )}
           </button>
         </form>
 
@@ -209,11 +289,12 @@ const SignUp: React.FC = () => {
           </div>
         </div>
 
-        {/* Social Login Buttons */}
-        <div className="grid grid-cols-2 gap-4">
-          <button 
-            type="button"
+          {/* Social Login Buttons */}
+          <div className="grid grid-cols-2 gap-4">
+          <button
+            onClick={() => handleSocialLogin('google')}
             className="flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all duration-300"
+            type="button"
           >
             <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
               <path
@@ -223,9 +304,10 @@ const SignUp: React.FC = () => {
             </svg>
             Google
           </button>
-          <button 
-            type="button"
+          <button
+            onClick={() => handleSocialLogin('facebook')}
             className="flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all duration-300"
+            type="button"
           >
             <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
               <path
@@ -241,7 +323,7 @@ const SignUp: React.FC = () => {
         <div className="text-center">
           <p className="text-gray-600">
             Already have an account?{' '}
-            <Link to="/login" className="text-orange-600 hover:text-orange-700 font-semibold">
+            <Link to="/signin" className="text-orange-600 hover:text-orange-700 font-semibold">
               Log in
             </Link>
           </p>

@@ -7,7 +7,7 @@ class CategoryController{
 
     async create(req: Request, res:Response, next:NextFunction){
         try{
-            const {name, description, parent_category_id} = req.body;
+            const {name, description,image_url, parent_category_id} = req.body;
 
             if (parent_category_id){
                 const parentExists = await Category.findByPk(parent_category_id);
@@ -19,6 +19,7 @@ class CategoryController{
             const category = await Category.create({
                 name,
                 description,
+                image_url,
                 parent_category_id,
             });
             

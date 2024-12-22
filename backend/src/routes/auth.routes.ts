@@ -1,12 +1,14 @@
 import { Router } from 'express';
 import passport from 'passport';
-import { register, login, googleCallback } from '../controllers/auth.controller';
+import { register, login, logout, googleCallback, facebookCallback, refreshToken } from '../controllers/auth.controller';
+import { forgotPassword, resetPassword } from '../controllers/password.controller';
 import { validateRegistration, validateLogin } from '../middleware/validation.middleware';
+import { AuthenticateOptions } from 'passport';
 import { AppError } from '../middleware/error.middleware';
+import { authMiddleware } from '../middleware/auth.middleware';
 
 const router = Router();
 
-// Add logging middleware for debugging
 const logRequest = (req: any, res: any, next: any) => {
   console.log('Auth Route:', req.path);
   console.log('Headers:', req.headers);
@@ -18,6 +20,9 @@ router.use(logRequest);
 router.post('/register', validateRegistration, register);
 router.post('/login', validateLogin, login);
 
+router.post('/refresh-token', refreshToken);
+
+router.post('/logout', logout);
 
 router.get(
   '/google',
@@ -49,6 +54,36 @@ router.get(
   googleCallback
 );
 
+router.get(
+  '/facebook',
+  (req, res, next) => {
+    console.log('Starting Facebook Auth');
+    next();
+  },
+  passport.authenticate('facebook', {
+    scope: ['email', 'public_profile'],
+    session: false,
+  } as AuthenticateOptions)
+);
+
+// Facebook callback route
+router.get(
+  '/facebook/callback',
+  (req, res, next) => {
+    console.log('Facebook Callback Received');
+    next();
+  },
+  passport.authenticate('facebook', {
+    failureRedirect: '/api/auth/error',
+    session: false,
+  } as AuthenticateOptions),
+  (req, res, next) => {
+    console.log('Facebook Auth Success');
+    next();
+  },
+  facebookCallback
+);
+
 
 router.get('/error', (req, res) => {
   console.error('Authentication Error:', req.query);
@@ -58,5 +93,8 @@ router.get('/error', (req, res) => {
     details: req.query
   });
 });
+
+router.post('/forgot-password', forgotPassword);
+router.post('/reset-password/:token', resetPassword);
 
 export default router;

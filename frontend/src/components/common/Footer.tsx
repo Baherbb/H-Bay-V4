@@ -28,6 +28,12 @@ const navigation = {
     { name: "Returns", href: "#" },
     { name: "Contact Us", href: "#" },
   ],
+  legal: [
+    { name: "Privacy Policy", href: "/privacy-policy" },
+    { name: "Terms of Service", href: "#" },
+    { name: "Cookie Policy", href: "#" },
+    { name: "Data Deletion", href: "#" },
+  ],
 };
 
 const socialLinks = [
@@ -36,6 +42,8 @@ const socialLinks = [
   { icon: Twitter, href: "#", label: "Twitter" },
   { icon: Facebook, href: "#", label: "Facebook" },
 ];
+
+
 
 const Footer = () => {
   return (
@@ -116,6 +124,7 @@ const Footer = () => {
               {[
                 { title: "Shop", items: navigation.shop },
                 { title: "Support", items: navigation.support },
+                { title: "Legal", items: navigation.legal },
               ].map((section) => (
                 <div key={section.title}>
                   <h3 className="text-lg font-bold text-white mb-4">{section.title}</h3>
