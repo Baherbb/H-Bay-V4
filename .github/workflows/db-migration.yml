@@ -1,0 +1,36 @@
+name: Database Migration
+
+on:
+  workflow_run:
+    workflows: ["Azure Deployment"]
+    types:
+      - completed
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '18'
+
+    - name: Install dependencies
+      run: |
+        cd backend
+        npm install
+
+    - name: Run migrations
+      env:
+        DB_HOST: ${{ secrets.DB_HOST }}
+        DB_PORT: 5432
+        DB_NAME: ecommerce
+        DB_USER: postgres
+        DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+      run: |
+        cd backend
+        npx sequelize-cli db:migrate
