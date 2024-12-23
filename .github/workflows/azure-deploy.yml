@@ -1,0 +1,64 @@
+name: Azure Deployment
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  ACR_NAME: ecommerceregistry
+  RESOURCE_GROUP: ecommerce-rg
+  BACKEND_APP_NAME: ecommerce-backend
+  FRONTEND_APP_NAME: ecommerce-frontend
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Build and Push Backend Image
+      uses: azure/docker-login@v1
+      with:
+        login-server: ${{ env.ACR_NAME }}.azurecr.io
+        username: ${{ secrets.ACR_USERNAME }}
+        password: ${{ secrets.ACR_PASSWORD }}
+    
+    - run: |
+        docker build ./backend -t ${{ env.ACR_NAME }}.azurecr.io/backend:${{ github.sha }}
+        docker push ${{ env.ACR_NAME }}.azurecr.io/backend:${{ github.sha }}
+
+    - name: Build and Push Frontend Image
+      run: |
+        docker build ./frontend -t ${{ env.ACR_NAME }}.azurecr.io/frontend:${{ github.sha }}
+        docker push ${{ env.ACR_NAME }}.azurecr.io/frontend:${{ github.sha }}
+
+    - name: Deploy Backend Container App
+      uses: azure/container-apps-deploy-action@v1
+      with:
+        resourceGroup: ${{ env.RESOURCE_GROUP }}
+        containerAppName: ${{ env.BACKEND_APP_NAME }}
+        imageToDeploy: ${{ env.ACR_NAME }}.azurecr.io/backend:${{ github.sha }}
+        environmentVariables: |
+          NODE_ENV=production
+          DB_HOST=${{ secrets.DB_HOST }}
+          DB_PORT=5432
+          DB_NAME=ecommerce
+          DB_USER=postgres
+          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+
+    - name: Deploy Frontend Container App
+      uses: azure/container-apps-deploy-action@v1
+      with:
+        resourceGroup: ${{ env.RESOURCE_GROUP }}
+        containerAppName: ${{ env.FRONTEND_APP_NAME }}
+        imageToDeploy: ${{ env.ACR_NAME }}.azurecr.io/frontend:${{ github.sha }}
+        environmentVariables: |
+          REACT_APP_API_URL=https://${{ env.BACKEND_APP_NAME }}.azurecontainerapps.io
