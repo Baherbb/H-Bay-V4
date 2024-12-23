@@ -21,6 +21,7 @@ const UserLayout: React.FC = () => {
       {/* Main Content */}
       <div className="flex-1 bg-white p-4">
         <Routes>
+          <Route path="/" element={<UserProfile />} />
           <Route path="/userprofile" element={<UserProfile />} />
           <Route path="/accountsettings" element={<AccountSettings />} />
           <Route path="/orders" element={<OrderHistory/>} />

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X, Search, ShoppingCart, Heart, User, LogOut } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
@@ -68,68 +68,86 @@ const Header = () => {
     setIsProfileDropdownOpen(false);
   };
 
-  const UserSection = () => {
-    if (!isAuthenticated) {
-      return (
-        <Link
-          to="/login"
-          className="inline-flex items-center justify-center px-6 py-2.5 rounded-lg font-medium text-white bg-orange-500 hover:bg-orange-600 shadow-lg hover:shadow-orange-500/30 transition-all duration-200 space-x-2"
-        >
-          <User className="h-5 w-5" />
-          <span>Sign In</span>
-        </Link>
-      );
-    }
+const UserSection = () => {
+  const { isAuthenticated, user, logout, refreshUser } = useAuth();
+  const [imageError, setImageError] = useState(false);
 
+  useEffect(() => {
+    setImageError(false);
+  }, [user?.profile_picture]);
+
+  if (!isAuthenticated) {
     return (
-      <div className="relative">
-        <button
-          onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
-          className="relative w-10 h-10 rounded-full overflow-hidden border-2 border-orange-500 hover:border-orange-600 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
-        >
-          {user?.profile_picture ? (
-            <img
-              src={user.profile_picture}
-              alt="Profile"
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center bg-orange-100 text-orange-500">
-              <User className="h-5 w-5" />
-            </div>
-          )}
-        </button>
+      <Link
+        to="/login"
+        className="inline-flex items-center justify-center px-6 py-2.5 rounded-lg font-medium text-white bg-orange-500 hover:bg-orange-600 shadow-lg hover:shadow-orange-500/30 transition-all duration-200 space-x-2"
+      >
+        <User className="h-5 w-5" />
+        <span>Sign In</span>
+      </Link>
+    );
+  }
 
-        {/* Dropdown Menu */}
-        {isProfileDropdownOpen && (
-          <div className="absolute right-0 mt-2 w-48 rounded-lg bg-white shadow-lg py-1 z-50">
-            <Link
-              to="/userlayout"
-              className="block px-4 py-2 text-gray-700 hover:bg-orange-50 hover:text-orange-500"
-              onClick={() => setIsProfileDropdownOpen(false)}
-            >
-              Profile
-            </Link>
-            <button
-              onClick={handleLogout}
-              className="w-full text-left px-4 py-2 text-gray-700 hover:bg-orange-50 hover:text-orange-500 flex items-center space-x-2"
-            >
-              <LogOut className="h-4 w-4" />
-              <span>Sign Out</span>
-            </button>
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
+        className="relative w-10 h-10 rounded-full overflow-hidden border-2 border-orange-500 hover:border-orange-600 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
+      >
+{user?.profile_picture && !imageError ? (
+  <img
+    src={user.profile_picture.startsWith('http') 
+      ? user.profile_picture 
+      : `${process.env.REACT_APP_API_URL}/api/profile-pictures/${user.profile_picture}`}
+    alt="Profile"
+    className="w-full h-full object-cover"
+    onError={(e) => {
+      console.error('Profile image load error:', e);
+      setImageError(true);
+      refreshUser();
+    }}
+  />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-orange-100 text-orange-500">
+            {user?.name ? (
+              <span className="text-lg font-semibold">
+                {user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+              </span>
+            ) : (
+              <User className="h-5 w-5" />
+            )}
           </div>
         )}
-      </div>
-    );
-  };
+      </button>
 
-  // Rest of your component remains the same until the desktop navigation section
+      {/* Dropdown Menu */}
+      {isProfileDropdownOpen && (
+        <div className="absolute right-0 mt-2 w-48 rounded-lg bg-white shadow-lg py-1 z-50">
+          <Link
+            to="/userlayout"
+            className="block px-4 py-2 text-gray-700 hover:bg-orange-50 hover:text-orange-500"
+            onClick={() => setIsProfileDropdownOpen(false)}
+          >
+            Profile
+          </Link>
+          <button
+            onClick={handleLogout}
+            className="w-full text-left px-4 py-2 text-gray-700 hover:bg-orange-50 hover:text-orange-500 flex items-center space-x-2"
+          >
+            <LogOut className="h-4 w-4" />
+            <span>Sign Out</span>
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+
   return (
     <>
       <div className="h-32"></div>
       
       <nav className="fixed top-0 w-full bg-white shadow-lg z-50">
-        {/* ... other nav content ... */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-32">
             {/* Logo */}
@@ -219,12 +237,72 @@ const Header = () => {
         {/* Mobile Menu */}
         <div 
           className={`lg:hidden transform transition-all duration-300 ease-in-out ${
-            isOpen ? 'max-h-[32rem] opacity-100' : 'max-h-0 opacity-0'
+            isOpen ? 'max-h-screen opacity-100' : 'max-h-0 opacity-0'
           } overflow-hidden bg-white shadow-lg`}
         >
           <div className="px-4 py-4 space-y-4">
-            {/* ... rest of mobile menu content ... */}
-            <div className="pt-2">
+            {/* Mobile Search Bar */}
+            <div className="relative">
+              <SearchAutocomplete
+                onSearch={(query) => {
+                  handleSearch(query);
+                  setIsOpen(false);
+                }}
+                placeholder="Search products..."
+                className={`w-full ${error ? 'border-red-500' : ''}`}
+              />
+              {error && (
+                <div className="text-sm text-red-500 mt-1">
+                  {error}
+                </div>
+              )}
+            </div>
+
+            {/* Mobile Navigation Links */}
+            <div className="space-y-2">
+              {navItems.map((item) => (
+                <Link
+                  key={item.label}
+                  to={item.href}
+                  className={`flex items-center w-full px-6 py-3 rounded-lg text-lg font-medium transition-all duration-200 ${
+                    isActiveLink(item.href)
+                      ? 'bg-orange-500 text-white'
+                      : 'text-gray-700 hover:bg-orange-50 hover:text-orange-500'
+                  }`}
+                  onClick={() => setIsOpen(false)}
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </div>
+
+            {/* Mobile Cart and Wishlist */}
+            <div className="flex space-x-4 px-6 py-3">
+              <button
+                onClick={handleWishListClick}
+                className="flex items-center space-x-2 text-gray-700 hover:text-orange-500"
+              >
+                <Heart className="h-6 w-6" />
+                <span>Wishlist</span>
+                <span className="bg-orange-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                  0
+                </span>
+              </button>
+
+              <button
+                onClick={handleCartClick}
+                className="flex items-center space-x-2 text-gray-700 hover:text-orange-500"
+              >
+                <ShoppingCart className="h-6 w-6" />
+                <span>Cart</span>
+                <span className="bg-orange-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                  0
+                </span>
+              </button>
+            </div>
+
+            {/* Mobile User Section */}
+            <div className="border-t border-gray-200 pt-4">
               {!isAuthenticated ? (
                 <Link
                   to="/login"

@@ -1,23 +1,16 @@
-# Use official Node.js image
-FROM node:18-alpine
-
-# Set working directory
+FROM node:18-alpine AS builder
 WORKDIR /app
-
-# Copy package files
 COPY package*.json ./
-
-# Install dependencies
-RUN npm ci --only=production
-
-# Copy rest of the application
+COPY tsconfig.json ./
+RUN npm install
 COPY . .
-
-# Build the application
 RUN npm run build
 
-# Expose port
+FROM node:18-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm install --production
+COPY --from=builder /app/dist ./dist
+COPY .env ./.env
 EXPOSE 3000
-
-# Run the application
-CMD ["npm", "start"]
+CMD ["node", "dist/index.js"]

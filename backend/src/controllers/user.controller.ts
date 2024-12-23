@@ -308,11 +308,7 @@ export const updateUserPassword = async (
     }
 };
 
-export const updateProfilePicture = async (
-    req: Request,
-    res: Response,
-    next: NextFunction
-): Promise<void> => {
+export const updateProfilePicture = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
         const userId = (req.user as User).id;
         const file = req.file;
@@ -320,9 +316,9 @@ export const updateProfilePicture = async (
         if (!file) {
             throw new AppError("No profile picture uploaded", 400);
         }
-
-
-        const profilePicturePath = `/api/profile-pictures/${file.filename}`;
+        
+        const profilePicturePath = file.filename;
+        
         const user = await User.findByPk(userId);
         if (!user) {
             throw new AppError("User not found", 404);

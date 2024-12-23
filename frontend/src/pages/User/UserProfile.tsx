@@ -5,7 +5,7 @@ import { Camera } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const UserProfile: React.FC = () => {
-  const { user: authUser, token } = useAuth();
+  const { user: authUser, token, refreshUser } = useAuth();
   const [user, setUser] = useState<User | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editedUser, setEditedUser] = useState<User | null>(null);
@@ -38,7 +38,6 @@ const UserProfile: React.FC = () => {
       });
 
       if (response.status === 401) {
-        // Token expired or invalid
         navigate('/login');
         return;
       }
@@ -72,51 +71,50 @@ const UserProfile: React.FC = () => {
     );
   };
 
-  const handleProfilePictureChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || !e.target.files[0]) return;
-  
-    setImageLoading(true);
-    setImageError(false);
-    setError("");
-  
-    const formData = new FormData();
-    formData.append('profile_picture', e.target.files[0]);
-  
-    try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/user/profile-picture`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-        body: formData,
-        credentials: 'include',
-      });
-  
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Upload error:', errorData);
-        throw new Error(errorData.message || 'Failed to upload image');
-      }
-  
-      const data = await response.json();
-      console.log('Upload success:', data);  
-  
-      await fetchUserProfile();
-    } catch (error) {
-      console.error('Upload error:', error);  
-      setError("Failed to upload profile picture. Please try again.");
-      setImageError(true);
-    } finally {
-      setImageLoading(false);
+const handleProfilePictureChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  if (!e.target.files || !e.target.files[0]) return;
+
+  setImageLoading(true);
+  setImageError(false);
+  setError("");
+
+  const formData = new FormData();
+  formData.append('profile_picture', e.target.files[0]);
+
+  try {
+    const response = await fetch(`${process.env.REACT_APP_API_URL}/api/user/profile-picture`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+      body: formData,
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to upload image');
     }
-  };
+
+    await fetchUserProfile();
+    await refreshUser();
+  } catch (error) {
+    console.error('Upload error:', error);
+    setError("Failed to upload profile picture. Please try again.");
+    setImageError(true);
+  } finally {
+    setImageLoading(false);
+  }
+};
 
 const getImageUrl = (profilePicture: string) => {
   if (!profilePicture) return '';
-  if (profilePicture.startsWith('http')) return profilePicture;
   
-  const path = profilePicture.startsWith('/api') ? profilePicture : `/api${profilePicture}`;
-  return `${process.env.REACT_APP_API_URL}${path}`;
+  if (profilePicture.startsWith('http')) {
+    return profilePicture;
+  }
+  
+  return `${process.env.REACT_APP_API_URL}/api/profile-pictures/${profilePicture}`;
 };
   
 

@@ -41,7 +41,11 @@ class Server {
     }
 
     private initializeMiddlewares(): void {
-        this.app.use(helmet());
+        this.app.use(helmet({
+            crossOriginResourcePolicy: { policy: "cross-origin" },
+            crossOriginEmbedderPolicy: false
+        }));
+    
         this.app.use(cors({
             origin: process.env.FRONTEND_URL || 'http://localhost:3001',
             credentials: true,
@@ -50,16 +54,19 @@ class Server {
             exposedHeaders: ['Content-Length', 'X-Requested-With'],
             maxAge: 86400,
         }));
+    
         this.app.use(express.json());
         this.app.use(express.urlencoded({ extended: true }));
         this.app.use(compression());
-
-
-
+    
+        this.app.use('/api/profile-pictures', (req, res, next) => {
+            res.setHeader('Access-Control-Allow-Origin', process.env.FRONTEND_URL || 'http://localhost:3001');
+            res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+            next();
+        }, express.static(path.join(__dirname, '../../uploads/profile-pictures')));
+    
         this.app.use('/api/', apiLimiter);
-        // this.app.use('/uploads', express.static(path.join(__dirname, '../../uploads')));
-        this.app.use('/api/profile-pictures', express.static(path.join(__dirname, '../../uploads/profile-pictures')));
-
+    
         this.app.use(session({
             secret: process.env.SESSION_SECRET!,
             resave: false,
@@ -70,7 +77,7 @@ class Server {
                 maxAge: 24 * 60 * 60 * 1000
             }
         }));
-
+    
         this.app.use(passport.initialize());
         this.app.use(passport.session());
         this.app.use(cookieParser());

@@ -13,6 +13,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   hasPermission: (requiredPermissions: Permission | Permission[]) => boolean;
   handleSocialLoginCallback: () => Promise<void>;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -24,6 +25,7 @@ const AuthContext = createContext<AuthContextType>({
   isAuthenticated: false,
   hasPermission: () => false,
   handleSocialLoginCallback: async () => {},
+  refreshUser: async () => {}
 });
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
@@ -86,6 +88,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     } catch (error) {
       console.error("Failed to refresh token:", error);
       logout();
+    }
+  };
+  const refreshUser = async () => {
+    try {
+      const response = await fetch(
+        `${process.env.REACT_APP_API_URL}/api/user/profile`,
+        {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.data?.user) {
+          setUser(data.data.user);
+          localStorage.setItem('user', JSON.stringify(data.data.user));
+        }
+      }
+    } catch (error) {
+      console.error('Error refreshing user data:', error);
     }
   };
 
@@ -199,6 +226,7 @@ const logout = async () => {
         isAuthenticated: !!token && !!user,
         hasPermission,
         handleSocialLoginCallback,
+        refreshUser,
       }}
     >
       {children}

@@ -36,6 +36,7 @@ const AppContent: React.FC = () => {
       {!isAdminRoute && !isUserRoute && <Header />}
       <main className="flex-grow">
         <Routes>
+          <Route path="/" element={<Home />} />
           <Route path="/home" element={<Home />} />
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<ContactUs />} />
@@ -43,7 +44,7 @@ const AppContent: React.FC = () => {
           <Route path="/signup" element={<SignUp />} />
           <Route path="/orderdetailes/*" element={<OrderDetailes />} />
           <Route path="/ordertracking/*" element={<OrderTracking />} />
-          <Route path="/userlayout/*"                 element={
+          <Route path="/userlayout/*"element={
                     <ProtectedRoute
                         allowedRoles={['admin', 'super_admin', 'employee', 'customer']}
                         requiredPermissions={[]} 
